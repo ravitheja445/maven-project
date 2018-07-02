@@ -1,42 +1,42 @@
 pipeline {
     agent any
+
+    parameters {
+        string(name:'tomcat_dev', defaultValue: '35.182.77.140', description: 'Staging Server')
+        string(name:'tomcat_prod', defaultValue:'35.183.105.251', description: 'Production Server')
+    }
+
+    triggers{
+        pollSCM('* * * * *')
+    }
+
     stages{
         stage('Build'){
-            steps {
+            steps{
                 sh 'mvn clean package'
             }
-            post {
-                success {
+            post{
+                success{
                     echo 'Now Archiving...'
                     archiveArtifacts artifacts: '**/target/*.war'
                 }
             }
         }
-        stage ('Deploy to Staging'){
-            steps {
-                build job: 'Deploy-to-staging'
-            }
-        }
 
-        stage ('Deploy to Production'){
-            steps{
-                timeout(time:5, unit:'DAYS'){
-                    input message:'Approve PRODUCTION Deployment?'
+        stage ('Deployments'){
+            parallel{
+                stage('Deploy to Staging'){
+                    steps{
+                        sh "scp -i ~/Downloads/SSH/Canada.pem **/target/*.war ec2-user@${params.tomcat_dev}:/var/lib/tomcat7/webapps"
+                    }
                 }
-
-                build job: 'Deploy-to-production'
-            }
-            post {
-                success {
-                    echo 'Code deployed to Production.'
-                }
-
-                failure {
-                    echo ' Deployment failed.'
+                
+                stage("Deploy to Production"){
+                    steps {
+                        sh "scp -i ~/Downloads/SSH/Canada.pem **/target*.war ec2-user@${params.tomcat_prod}:/var/lib/tomcat7/webapps"
+                    }
                 }
             }
         }
-
-
     }
 }
