@@ -27,7 +27,7 @@ pipeline {
             parallel{
                 stage('Deploy to Staging'){
                     steps{
-                        sh "scp -i Users/Ravitheja/Downloads/SSH/Canada.pem **/target/*.war ec2-user@${params.tomcat_dev}:/var/lib/tomcat7/webapps"
+                        sh "scp -r -i Users/Ravitheja/Downloads/SSH/Canada.pem **/target/*.war ec2-user@${params.tomcat_dev}:/var/lib/tomcat7/webapps"
                     }
                 }
                 
